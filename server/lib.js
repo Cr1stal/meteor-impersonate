@@ -1,6 +1,6 @@
 Impersonate = {
-  admins: ["admin"],
-  adminGroups:[], // { role: "admin", group: "organization" }
+  admins: ["moderator"],
+  adminGroups: [], // { role: "admin", group: "organization" }
 };
 
 Meteor.methods({
@@ -49,6 +49,18 @@ Meteor.methods({
       // Impersonating with no token
       var user = Meteor.users.findOne({ _id: currentUser }) || {};
       params.token = Meteor._get(user, "services", "resume", "loginTokens", 0, "hashedToken");
+    }
+
+    var targetUser = Meteor.users.findOne({ _id: params.toUser }) || {};
+    var adminEmails = Meteor._get(global.AdminConfig, 'adminEmails') || [];
+    var userEmails = Meteor._get(targetUser, 'emails')
+
+    for (var i = 0; i < userEmails.length; i++) {
+      var userEmail = userEmails[i];
+      var userEmailAddress = Meteor._get(userEmail, 'address');
+      if (adminEmails.indexOf(userEmailAddress) !== -1) {
+        throw new Meteor.Error(403, "Permission denied. You need to be an developer to impersonate that users.");
+      }
     }
 
     this.setUserId(params.toUser);
